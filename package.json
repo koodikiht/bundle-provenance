@@ -1,7 +1,7 @@
 {
   "name": "bundle-provenance",
   "version": "0.1.0",
-  "description": "Post-build binary and client bundle supply-chain auditor (Electron Fuses, ASAR Pickle, SourceMap v3, PurlDB & CycloneDX v1.6)",
+  "description": "Post-build binary and client bundle supply-chain auditor (Electron Fuses, ASAR Pickle, SourceMap v3, PurlDB and CycloneDX v1.6)",
   "license": "MIT",
   "author": "Mark (malfunctionAI) <contact@koodikiht.dev>",
   "homepage": "https://github.com/koodikiht/bundle-provenance",

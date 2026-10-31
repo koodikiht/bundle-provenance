@@ -5,7 +5,7 @@
     "role": "maintainer",
     "name": "Mark (malfunctionAI)",
     "email": "contact@koodikiht.dev",
-    "description": "Systems & security engineer building binary provenance and post-build supply-chain auditing tools in Tallinn, Estonia.",
+    "description": "Systems and security engineer building binary provenance and post-build supply-chain auditing tools in Tallinn, Estonia.",
     "webpageUrl": {
       "url": "https://koodikiht.dev"
     }
@@ -14,7 +14,7 @@
     {
       "guid": "bundle-provenance",
       "name": "bundle-provenance",
-      "description": "Post-build binary and client bundle supply-chain auditor (Electron Fuses, ASAR Pickle, SourceMap v3, PurlDB & CycloneDX v1.6).",
+      "description": "Post-build binary and client bundle supply-chain auditor (Electron Fuses, ASAR Pickle, SourceMap v3, PurlDB and CycloneDX v1.6).",
       "webpageUrl": {
         "url": "https://github.com/koodikiht/bundle-provenance"
       },
@@ -38,7 +38,7 @@
       {
         "guid": "core-development",
         "status": "active",
-        "name": "Post-build bytecode & bundler provenance R&D",
+        "name": "Post-build bytecode and bundler provenance R&D",
         "description": "Extending PURL extraction to sourceless Webpack/Vite bundles, CRX3, and React Native Hermes bytecode.",
         "amount": 24800,
         "currency": "EUR",
