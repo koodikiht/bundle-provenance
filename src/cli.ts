@@ -6,6 +6,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { inspectAsarBuffer } from "./asar.ts";
 import { inspectElectronFuses } from "./fuses.ts";
+import { inspectMachoEntitlements } from "./macho.ts";
 import { formatCycloneDx, formatSarif, formatTextSummary } from "./reporters.ts";
 import { inspectBundleAndSourceMap } from "./sourcemap.ts";
 import type { AuditReport, DiscoveredPackage, Finding } from "./types.ts";
@@ -35,6 +36,25 @@ export function scanAppBundleDirectory(appDir: string): AuditReport {
         report.fuses = fuseRes;
         findings.push(...fuseRes.findings);
         break;
+      }
+    }
+  }
+
+  const macosDir = join(appDir, "Contents/MacOS");
+  if (existsSync(macosDir) && statSync(macosDir).isDirectory()) {
+    for (const entry of readdirSync(macosDir)) {
+      const fullExec = join(macosDir, entry);
+      if (existsSync(fullExec) && statSync(fullExec).isFile()) {
+        const machoRes = inspectMachoEntitlements(
+          new Uint8Array(readFileSync(fullExec)),
+          fullExec,
+          report.fuses,
+        );
+        if (machoRes.found) {
+          report.macho = machoRes;
+          findings.push(...machoRes.findings);
+          break;
+        }
       }
     }
   }
@@ -112,11 +132,18 @@ export function scanArtifactBuffer(
   const fuseRes = inspectElectronFuses(buf, targetName);
   report.fuses = fuseRes;
   findings.push(...fuseRes.findings);
+
+  const machoRes = inspectMachoEntitlements(buf, targetName, fuseRes);
+  if (machoRes.found) {
+    report.macho = machoRes;
+    findings.push(...machoRes.findings);
+  }
+
   return report;
 }
 
 function printUsage(): void {
-  console.log(`bundle-provenance v0.1.0 - Post-build client artifact & SBOM auditor
+  console.log(`bundle-provenance v0.1.0 - Post-build client artifact and SBOM auditor
 
 Usage:
   bundle-provenance scan <file> [--format text|json|cyclonedx|sarif] [--map <file.map>] [--manifest <package.json>] [--fail-on-high]

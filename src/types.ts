@@ -56,10 +56,19 @@ export interface SourceMapAuditResult {
   findings: Finding[];
 }
 
+export interface MachoEntitlementsAuditResult {
+  found: boolean;
+  blobOffsetHex: string | null;
+  enabledEntitlements: string[];
+  tccEntitlements: string[];
+  findings: Finding[];
+}
+
 export interface AuditReport {
   target: string;
   timestamp: string;
   fuses?: FuseAuditResult;
+  macho?: MachoEntitlementsAuditResult;
   asar?: AsarAuditResult;
   bundle?: SourceMapAuditResult;
   packages: DiscoveredPackage[];

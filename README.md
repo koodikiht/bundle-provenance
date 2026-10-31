@@ -29,8 +29,8 @@ Between source repository and release artifact, build pipelines frequently intro
 
 ```mermaid
 flowchart LR
-  A["Compiled Artifact (.bin / .asar / .js)"] --> B["In-Memory Binary Parser (standalone)"]
-  B --> C["Electron Fuse v1 Wire Scanner (0x644c3770...)"]
+  A["Compiled Artifact (.app / .bin / .asar / .js)"] --> B["In-Memory Binary Parser (standalone)"]
+  B --> C["Electron Fuse v1 and Mach-O Entitlements Scanner"]
   B --> D["Chromium Pickle ASAR Header and SHA-256 Reader"]
   B --> E["SourceMap v3 and Banner Lineage Extractor"]
   C --> F["CycloneDX v1.6 SBOM / PURL Inventory"]
@@ -42,8 +42,9 @@ flowchart LR
 ```
 
 ### Capabilities in `v0.1.0`
-1. **Byte-level Electron Fuse v1 auditor (`src/fuses.ts`)**:
+1. **Byte-level Electron Fuse v1 and Mach-O entitlements auditor (`src/fuses.ts`, `src/macho.ts`)**:
    - Scans raw executables for the 32-byte wire sentinel (`dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX`), decodes the 8-byte fuse vector (`RunAsNode`, `EnableCookieEncryption`, `EnableNodeOptionsEnvironmentVariable`, `EnableNodeCliInspectArguments`, `EnableEmbeddedAsarIntegrityValidation`, `OnlyLoadAppFromAsar`, `LoadBrowserProcessSpecificV8Snapshot`, `GrantFileProtocolExtraPrivileges`), reports exact hex offsets, and flags `FUSE-001..FUSE-006` risks.
+   - Extracts embedded Mach-O `CSMAGIC_EMBEDDED_ENTITLEMENTS` (`0xfade7171`) XML plist blobs and cross-checks Hardened Runtime flags (`cs.allow-dyld-environment-variables`, `cs.disable-library-validation`, `cs.debugger`, `get-task-allow`) against TCC permissions and Electron fuse states (`MACHO-001..005`).
 2. **In-memory `Chromium Pickle` ASAR inspector (`src/asar.ts`)**:
    - Parses the 16-byte little-endian `UInt32` pickle header without extracting untrusted files to disk (preventing Zip-Slip / path traversal `ASAR-001`).
    - Recovers all nested `node_modules/**/package.json` slices directly from archive byte offsets, computes `SHA-256` manifest digests, constructs `pkg:npm/...` PURLs, verifies per-file 4MB block integrity presence (`ASAR-002`), and inventories native binary addons (`.node`, `.dll`, `.dylib`, `.so` - `ASAR-003`).

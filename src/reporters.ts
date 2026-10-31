@@ -111,6 +111,15 @@ export function formatTextSummary(report: AuditReport): string {
     }
   }
 
+  if (report.macho?.found) {
+    lines.push(
+      `[MACHO] Embedded Entitlements @ ${report.macho.blobOffsetHex} (${report.macho.enabledEntitlements.length} enabled, ${report.macho.tccEntitlements.length} TCC)`,
+    );
+    for (const ent of report.macho.enabledEntitlements) {
+      lines.push(`  - ${ent}`);
+    }
+  }
+
   if (report.asar) {
     lines.push(
       `[ASAR]  Header: ${report.asar.headerSize}B | Files: ${report.asar.totalFiles} | BlockIntegrity: ${report.asar.hasIntegrityBlocks ? "YES" : "NO"} | NativeAddons: ${report.asar.nativeBinaries.length}`,
@@ -130,7 +139,7 @@ export function formatTextSummary(report: AuditReport): string {
     }
   }
 
-  lines.push(`[AUDIT] Security & provenance findings: ${report.findings.length}`);
+  lines.push(`[AUDIT] Security and provenance findings: ${report.findings.length}`);
   for (const finding of report.findings) {
     lines.push(`  - [${finding.severity}] ${finding.ruleId}: ${finding.message}`);
   }

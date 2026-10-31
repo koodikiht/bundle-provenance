@@ -5,6 +5,7 @@ import { describe, expect, test } from "bun:test";
 import { inspectAsarBuffer } from "../src/asar.ts";
 import { scanArtifactBuffer } from "../src/cli.ts";
 import { FUSE_SENTINEL, inspectElectronFuses } from "../src/fuses.ts";
+import { inspectMachoEntitlements } from "../src/macho.ts";
 import { formatCycloneDx, formatSarif } from "../src/reporters.ts";
 import { inspectBundleAndSourceMap } from "../src/sourcemap.ts";
 
@@ -186,5 +187,34 @@ describe("bundle-provenance v0.1.0 core verification", () => {
     const sarif = JSON.parse(formatSarif(report));
     expect(sarif.version).toBe("2.1.0");
     expect(sarif.runs[0].results.length).toBeGreaterThan(0);
+  });
+
+  test("detects Mach-O CSMAGIC_EMBEDDED_ENTITLEMENTS DYLD + TCC bypass even when Electron Fuses are hardened", () => {
+    const plistXml = `<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+  <key>com.apple.security.cs.allow-dyld-environment-variables</key><true/>
+  <key>com.apple.security.cs.disable-library-validation</key><true/>
+  <key>com.apple.security.device.camera</key><true/>
+  <key>com.apple.security.device.audio-input</key><true/>
+</dict></plist>`;
+    const xmlBytes = new TextEncoder().encode(plistXml);
+    const blobLen = 8 + xmlBytes.byteLength;
+    const machoStub = new Uint8Array(32 + blobLen + 16);
+    machoStub.set([0xfa, 0xde, 0x71, 0x71], 32);
+    const view = new DataView(machoStub.buffer);
+    view.setUint32(36, blobLen, false); // big-endian
+    machoStub.set(xmlBytes, 40);
+
+    const hardenedFuses = inspectElectronFuses(buildSyntheticBinaryWithFuses("01001110"), "Framework");
+    const res = inspectMachoEntitlements(machoStub, "Contents/MacOS/App", hardenedFuses);
+
+    expect(res.found).toBe(true);
+    expect(res.blobOffsetHex).toBe("0x00000020");
+    expect(res.tccEntitlements).toEqual([
+      "com.apple.security.device.audio-input",
+      "com.apple.security.device.camera",
+    ]);
+    expect(res.findings.map((f) => f.ruleId)).toContain("MACHO-001");
+    expect(res.findings[0]?.message).toContain("bypasses hardened Electron Fuses");
   });
 });
