@@ -5,9 +5,10 @@
     "role": "maintainer",
     "name": "Mark (malfunctionAI)",
     "email": "contact@koodikiht.dev",
-    "description": "Systems and security engineer building binary provenance and post-build supply-chain auditing tools in Tallinn, Estonia.",
+    "description": "Systems and security engineer building binary provenance, protocol-level accessibility, and supply-chain auditing tools in Tallinn, Estonia.",
     "webpageUrl": {
-      "url": "https://koodikiht.dev"
+      "url": "https://koodikiht.dev",
+      "wellKnown": "https://koodikiht.dev/.well-known/funding-manifest-urls"
     }
   },
   "projects": [
@@ -16,13 +17,30 @@
       "name": "bundle-provenance",
       "description": "Post-build binary and client bundle supply-chain auditor (Electron Fuses, ASAR Pickle, SourceMap v3, PurlDB and CycloneDX v1.6).",
       "webpageUrl": {
-        "url": "https://github.com/koodikiht/bundle-provenance"
+        "url": "https://github.com/koodikiht/bundle-provenance",
+        "wellKnown": "https://github.com/koodikiht/bundle-provenance/blob/main/.well-known/funding-manifest-urls"
       },
       "repositoryUrl": {
-        "url": "https://github.com/koodikiht/bundle-provenance"
+        "url": "https://github.com/koodikiht/bundle-provenance",
+        "wellKnown": "https://github.com/koodikiht/bundle-provenance/blob/main/.well-known/funding-manifest-urls"
       },
       "licenses": ["spdx:MIT"],
-      "tags": ["security", "sbom", "supply-chain", "cyclonedx", "purl", "electron"]
+      "tags": ["security", "sbom", "supply-chain", "cyclonedx", "purl", "electron", "developer-tools", "cli", "auditing"]
+    },
+    {
+      "guid": "axtree-audit",
+      "name": "axtree-audit",
+      "description": "Out-of-band CDP Accessibility Tree (AXTree) WCAG 2.2 verifier and third-party telemetry inspector (SARIF v2.1.0 and W3C EARL).",
+      "webpageUrl": {
+        "url": "https://github.com/koodikiht/axtree-audit",
+        "wellKnown": "https://github.com/koodikiht/axtree-audit/blob/main/.well-known/funding-manifest-urls"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/koodikiht/axtree-audit",
+        "wellKnown": "https://github.com/koodikiht/axtree-audit/blob/main/.well-known/funding-manifest-urls"
+      },
+      "licenses": ["spdx:MIT"],
+      "tags": ["accessibility", "wcag", "w3c-earl", "privacy", "cdp", "webdriver-bidi", "developer-tools", "cli", "browser", "testing"]
     }
   ],
   "funding": {
@@ -42,6 +60,26 @@
         "description": "Extending PURL extraction to sourceless Webpack/Vite bundles, CRX3, and React Native Hermes bytecode.",
         "amount": 24800,
         "currency": "EUR",
+        "frequency": "one-time",
+        "channels": ["bank-sepa"]
+      },
+      {
+        "guid": "floss-sustainability",
+        "status": "active",
+        "name": "Long-term maintenance and upstream format tracking",
+        "description": "Continuous maintenance across Chromium, Electron, and Hermes format updates, test corpora, and distro packaging.",
+        "amount": 10000,
+        "currency": "USD",
+        "frequency": "yearly",
+        "channels": ["bank-sepa"]
+      },
+      {
+        "guid": "floss-core-grant",
+        "status": "active",
+        "name": "Binary provenance and protocol accessibility verification suite",
+        "description": "Unrestricted support for post-build supply-chain auditing and cross-engine WebDriver BiDi accessibility tooling.",
+        "amount": 25000,
+        "currency": "USD",
         "frequency": "one-time",
         "channels": ["bank-sepa"]
       }
