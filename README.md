@@ -5,8 +5,10 @@
 
 **Post-build binary & client bundle supply-chain auditor (`Electron Fuses`, `ASAR Chromium Pickle`, `SourceMap v3`, `Package-URL / PurlDB` & `CycloneDX v1.6`).**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/koodikiht/bundle-provenance/actions/workflows/ci.yml/badge.svg)](https://github.com/koodikiht/bundle-provenance/actions/workflows/ci.yml)
+[![SLSA Build Level 3](https://img.shields.io/badge/SLSA-Build%20Level%203-brightgreen)](https://github.com/koodikiht/bundle-provenance/attestations)
 [![REUSE status](https://api.reuse.software/badge/github.com/koodikiht/bundle-provenance)](https://api.reuse.software/info/github.com/koodikiht/bundle-provenance)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 
 ---
