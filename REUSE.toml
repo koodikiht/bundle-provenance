@@ -1,0 +1,11 @@
+version = 1
+
+[[annotations]]
+path = [
+  ".gitignore",
+  "package.json",
+  "tsconfig.json",
+  "funding.json",
+]
+SPDX-FileCopyrightText = "2026 Mark (malfunctionAI) / KoodiKiht"
+SPDX-License-Identifier = "MIT"

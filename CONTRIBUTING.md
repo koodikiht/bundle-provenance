@@ -7,7 +7,7 @@
 
 1. **No external runtime dependencies**: Do not add third-party packages to `"dependencies"` in `package.json`. All binary format parsers must use standard `Uint8Array`, `DataView`, and `node:crypto`.
 2. **In-memory safety**: Never extract untrusted archive payloads (`.asar`, `.crx`) to disk during inspection. Guard all `UInt32LE` header offsets against integer overflow and buffer truncation.
-3. **REUSE 3.2 licensing**: Every source file must start with `SPDX-FileCopyrightText` and `SPDX-License-Identifier: MIT`.
+3. **REUSE 3.3 licensing**: Every source file must start with standard SPDX copyright and `MIT` license headers.
 
 ## Generative AI Policy (Code Provenance & Copyright Hygiene)
 
