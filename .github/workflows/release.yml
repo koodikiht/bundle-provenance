@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 Mark (malfunctionAI) / KoodiKiht
+# SPDX-License-Identifier: MIT
+
+name: Release & SLSA Provenance
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build-and-attest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Run test suite
+        run: bun test
+      - name: Compile standalone binary
+        run: |
+          mkdir -p dist
+          bun build --compile src/cli.ts --outfile dist/bundle-provenance-linux-x64
+          sha256sum dist/bundle-provenance-linux-x64 > dist/SHA256SUMS
+      - name: Generate SLSA Build Level 3 provenance attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: "dist/bundle-provenance-linux-x64"

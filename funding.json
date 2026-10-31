@@ -1,0 +1,50 @@
+{
+  "version": "v1.0.0",
+  "entity": {
+    "type": "individual",
+    "role": "maintainer",
+    "name": "Mark (malfunctionAI)",
+    "email": "contact@koodikiht.dev",
+    "description": "Systems & security engineer building binary provenance and post-build supply-chain auditing tools in Tallinn, Estonia.",
+    "webpageUrl": {
+      "url": "https://koodikiht.dev"
+    }
+  },
+  "projects": [
+    {
+      "guid": "bundle-provenance",
+      "name": "bundle-provenance",
+      "description": "Post-build binary and client bundle supply-chain auditor (Electron Fuses, ASAR Pickle, SourceMap v3, PurlDB & CycloneDX v1.6).",
+      "webpageUrl": {
+        "url": "https://github.com/koodikiht/bundle-provenance"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/koodikiht/bundle-provenance"
+      },
+      "licenses": ["spdx:MIT"],
+      "tags": ["security", "sbom", "supply-chain", "cyclonedx", "purl", "electron"]
+    }
+  ],
+  "funding": {
+    "channels": [
+      {
+        "guid": "bank-sepa",
+        "type": "bank",
+        "address": "EE (SEPA)",
+        "description": "SEPA transfer (Estonia)"
+      }
+    ],
+    "plans": [
+      {
+        "guid": "core-development",
+        "status": "active",
+        "name": "Post-build bytecode & bundler provenance R&D",
+        "description": "Extending PURL extraction to sourceless Webpack/Vite bundles, CRX3, and React Native Hermes bytecode.",
+        "amount": 24800,
+        "currency": "EUR",
+        "frequency": "one-time",
+        "channels": ["bank-sepa"]
+      }
+    ]
+  }
+}

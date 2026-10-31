@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 Mark (malfunctionAI) / KoodiKiht
+# SPDX-License-Identifier: MIT
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Run test suite
+        run: bun test
+      - name: Verify empty runtime dependency list
+        run: |
+          deps=$(jq -r '.dependencies // empty' package.json)
+          if [ -n "$deps" ]; then
+            echo "Unexpected runtime dependencies found"
+            exit 1
+          fi
