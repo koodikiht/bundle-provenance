@@ -23,12 +23,23 @@ jobs:
           bun-version: latest
       - name: Run test suite
         run: bun test
-      - name: Compile standalone binary
+      - name: Compile standalone binaries
         run: |
           mkdir -p dist
-          bun build --compile src/cli.ts --outfile dist/bundle-provenance-linux-x64
-          sha256sum dist/bundle-provenance-linux-x64 > dist/SHA256SUMS
+          bun build --compile --target=bun-linux-x64 src/cli.ts --outfile dist/bundle-provenance-linux-x64
+          bun build --compile --target=bun-linux-arm64 src/cli.ts --outfile dist/bundle-provenance-linux-arm64
+          bun build --compile --target=bun-darwin-arm64 src/cli.ts --outfile dist/bundle-provenance-darwin-arm64
+          bun build --compile --target=bun-darwin-x64 src/cli.ts --outfile dist/bundle-provenance-darwin-x64
+          cd dist && sha256sum bundle-provenance-* > SHA256SUMS
       - name: Generate SLSA Build Level 3 provenance attestation
         uses: actions/attest-build-provenance@v1
         with:
-          subject-path: "dist/bundle-provenance-linux-x64"
+          subject-path: "dist/bundle-provenance-*"
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes "Release ${GITHUB_REF_NAME}"
+          fi
+          gh release upload "${GITHUB_REF_NAME}" dist/* --clobber
