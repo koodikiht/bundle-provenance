@@ -1,101 +1,53 @@
 <!-- SPDX-FileCopyrightText: 2026 Mark (malfunctionAI) / KoodiKiht -->
 <!-- SPDX-License-Identifier: MIT -->
 
-# `bundle-provenance`
+# bundle-provenance
 
-**Post-build binary and client bundle supply-chain auditor (`Electron Fuses`, `ASAR Chromium Pickle`, `SourceMap v3`, `Package-URL / PurlDB` and `CycloneDX v1.6`).**
+[![CI](https://github.com/koodikiht/bundle-provenance/actions/workflows/ci.yml/badge.svg)](https://github.com/koodikiht/bundle-provenance/actions/workflows/ci.yml) [![SLSA Build Level 3](https://img.shields.io/badge/SLSA-Build%20Level%203-brightgreen)](https://github.com/koodikiht/bundle-provenance/attestations) [![REUSE status](https://api.reuse.software/badge/github.com/koodikiht/bundle-provenance)](https://api.reuse.software/info/github.com/koodikiht/bundle-provenance) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[![CI](https://github.com/koodikiht/bundle-provenance/actions/workflows/ci.yml/badge.svg)](https://github.com/koodikiht/bundle-provenance/actions/workflows/ci.yml)
-[![SLSA Build Level 3](https://img.shields.io/badge/SLSA-Build%20Level%203-brightgreen)](https://github.com/koodikiht/bundle-provenance/attestations)
-[![REUSE status](https://api.reuse.software/badge/github.com/koodikiht/bundle-provenance)](https://api.reuse.software/info/github.com/koodikiht/bundle-provenance)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+Post-build supply-chain and binary hardening inspector for packaged client artifacts (`Electron`, `Mach-O`, `ASAR`, and `SourceMap v3` web bundles).
 
----
+Lockfile scanners see what was declared before compilation. Packaging hooks (`electron-builder`, `afterPack`, bundler plugins) strip binary hardening flags, ship unhashed `app.asar` archives, or pull undeclared packages into the final bundle. `bundle-provenance` parses the compiled output in memory without extracting untrusted archives to disk. It recovers `Package-URL` (`purl`) coordinates and writes `CycloneDX v1.6` or `SARIF v2.1.0` reports.
 
-## Problem statement
+## Usage
 
-Conventional SBOM and SCA tools (`Syft`, `Trivy`, `npm audit`) inspect pre-build manifest files (`package.json`, lockfiles). However, end users and enterprise environments execute **compiled post-build client artifacts**:
-- Packaged **Electron binaries** (`ELF`, `Mach-O`, `PE`) and **`app.asar`** archives (`Chromium Pickle` binary headers).
-- Minified **web bundles** (`.js` + `.map`) where `node_modules` hierarchy is flattened.
-- Browser extensions (`.crx`) and mobile bytecode bundles.
-
-Between source repository and release artifact, build pipelines frequently introduce **phantom (undeclared) dependencies**, leave dangerous runtime **Electron Fuses** enabled (`RunAsNode`, `EnableNodeCliInspectArguments`), omit `ASAR` block integrity hashes, or embed undocumented external telemetry endpoints.
-
-`bundle-provenance` inspects compiled client artifacts **strictly in memory** (without disk extraction or third-party runtime dependencies) to recover accurate **`Package-URL` (`purl`)** coordinates, verify binary hardening flags, and emit standard **`CycloneDX v1.6`** and **`SARIF v2.1.0`** reports.
-
----
-
-## Architecture (`v0.1.0`)
-
-```mermaid
-flowchart LR
-  A["Compiled Artifact (.app / .bin / .asar / .js)"] --> B["In-Memory Binary Parser (standalone)"]
-  B --> C["Electron Fuse v1 and Mach-O Entitlements Scanner"]
-  B --> D["Chromium Pickle ASAR Header and SHA-256 Reader"]
-  B --> E["SourceMap v3 and Banner Lineage Extractor"]
-  C --> F["CycloneDX v1.6 SBOM / PURL Inventory"]
-  D --> F
-  E --> F
-  C --> G["SARIF v2.1.0 Security Report"]
-  D --> G
-  E --> G
-```
-
-### Capabilities in `v0.1.0`
-1. **Byte-level Electron Fuse v1 and Mach-O entitlements auditor (`src/fuses.ts`, `src/macho.ts`)**:
-   - Scans raw executables for the 32-byte wire sentinel (`dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX`), decodes the 8-byte fuse vector (`RunAsNode`, `EnableCookieEncryption`, `EnableNodeOptionsEnvironmentVariable`, `EnableNodeCliInspectArguments`, `EnableEmbeddedAsarIntegrityValidation`, `OnlyLoadAppFromAsar`, `LoadBrowserProcessSpecificV8Snapshot`, `GrantFileProtocolExtraPrivileges`), reports exact hex offsets, and flags `FUSE-001..FUSE-006` risks.
-   - Extracts embedded Mach-O `CSMAGIC_EMBEDDED_ENTITLEMENTS` (`0xfade7171`) XML plist blobs and cross-checks Hardened Runtime flags (`cs.allow-dyld-environment-variables`, `cs.disable-library-validation`, `cs.debugger`, `get-task-allow`) against TCC permissions and Electron fuse states (`MACHO-001..005`).
-2. **In-memory `Chromium Pickle` ASAR inspector (`src/asar.ts`)**:
-   - Parses the 16-byte little-endian `UInt32` pickle header without extracting untrusted files to disk (preventing Zip-Slip / path traversal `ASAR-001`).
-   - Recovers all nested `node_modules/**/package.json` slices directly from archive byte offsets, computes `SHA-256` manifest digests, constructs `pkg:npm/...` PURLs, verifies per-file 4MB block integrity presence (`ASAR-002`), and inventories native binary addons (`.node`, `.dll`, `.dylib`, `.so` - `ASAR-003`).
-3. **Web bundle lineage and phantom dependency detector (`src/sourcemap.ts`)**:
-   - Extracts upstream package versions from `SourceMap v3` (`sources` array, including `.pnpm` virtual store paths) and bundler `@license` banners.
-   - Cross-checks embedded packages against a declared `package.json` manifest (`--manifest`) to detect **phantom (undeclared) packages** (`BUNDLE-001`) and extracts hardcoded external `https://` and `wss://` endpoints.
-4. **Standard exporters (`src/reporters.ts`)**:
-   - `--format text`: human-readable terminal summary.
-   - `--format json`: structured PURL and finding telemetry compatible with **AboutCode `PurlDB`** ingestion pipelines.
-   - `--format cyclonedx`: compliant **CycloneDX v1.6 JSON** SBOM for **EU Cyber Resilience Act (CRA)** Module A technical files.
-   - `--format sarif`: **SARIF v2.1.0** for GitHub Code Scanning / CI gating (`--fail-on-high`).
-
----
-
-## Quick start and verification
-
-Requires `bun >= 1.1` (or `node >= 22.6` with `--experimental-strip-types`). No external npm packages required at runtime.
+Requires `bun >= 1.1` (or `node >= 22.6` with `--experimental-strip-types`). Zero runtime npm dependencies.
 
 ```bash
-# Run offline verification test suite (synthesizes binary Fuse wires, ASAR pickles, and SourceMaps)
+# Scan an Electron executable
+bun run src/cli.ts scan /Applications/App.app/Contents/MacOS/App --fail-on-high
+
+# Dump a CycloneDX 1.6 SBOM from app.asar without unpacking to disk
+bun run src/cli.ts scan /Applications/App.app/Contents/Resources/app.asar --format cyclonedx > sbom.cdx.json
+
+# Diff a minified JS bundle against package.json
+bun run src/cli.ts scan dist/app.min.js --map dist/app.min.js.map --manifest package.json --format sarif
+
+# Run unit tests
 bun test
-
-# Scan an Electron executable for insecure Fuse bits
-bun run src/cli.ts scan /path/to/ElectronApp --fail-on-high
-
-# Scan a packed app.asar and emit a CycloneDX v1.6 SBOM
-bun run src/cli.ts scan /path/to/app.asar --format cyclonedx > sbom.cdx.json
-
-# Verify a production web bundle against its declared package.json to catch phantom dependencies
-bun run src/cli.ts scan dist/bundle.min.js --map dist/bundle.min.js.map --manifest package.json --format sarif
 ```
 
----
+## Checks
 
-## Verified upstream findings (`v0.1.0` field audits)
+- `FUSE-001..006` (`src/fuses.ts`): locates the 32-byte Electron Fuse v1 sentinel (`dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX`) in raw ELF/Mach-O/PE binaries, decodes the 8-byte fuse vector (`RunAsNode`, `EnableCookieEncryption`, `EnableNodeOptionsEnvironmentVariable`, `EnableNodeCliInspectArguments`, `EnableEmbeddedAsarIntegrityValidation`, `OnlyLoadAppFromAsar`), and prints exact hex offsets.
+- `MACHO-001..005` (`src/macho.ts`): parses embedded `CSMAGIC_EMBEDDED_ENTITLEMENTS` (`0xfade7171`) XML plist blobs. Cross-checks `cs.allow-dyld-environment-variables`, `cs.disable-library-validation`, `cs.debugger`, and `get-task-allow` against macOS TCC grants and fuse states.
+- `ASAR-001..003` (`src/asar.ts`): reads the 16-byte little-endian `UInt32` Chromium Pickle header in memory. Flags `..` path traversal entries, checks 4MB block integrity hashes, hashes nested `node_modules/**/package.json` manifests into `pkg:npm/...` PURLs, and lists native `.node` / `.dylib` / `.so` / `.dll` addons.
+- `BUNDLE-001` (`src/sourcemap.ts`): reconstructs package versions from `SourceMap v3` `sources` paths (including `.pnpm` virtual stores) and `@license` banners. Flags phantom packages missing from `--manifest` and extracts hardcoded `https://` and `wss://` endpoints.
+
+## Output formats
+
+- `--format text`: terminal report with byte offsets and severity counts.
+- `--format json`: structured PURL inventory and findings for AboutCode `PurlDB` ingestion.
+- `--format cyclonedx`: `CycloneDX v1.6` JSON SBOM.
+- `--format sarif`: `SARIF v2.1.0` for GitHub Code Scanning and CI gates (`--fail-on-high`).
+
+## Bugs found in the wild
 
 | Target | Finding | Issue |
 | :--- | :--- | :--- |
-| **DeltaChat Desktop**<br>`v2.65.0` (`arm64`) | **`FUSE-004` / `FUSE-005` (`ASAR-002`)**: `afterPackHook.mjs` flips `runAsNode`, `enableCookieEncryption`, `enableNodeOptionsEnvironmentVariable`, and `enableNodeCliInspectArguments`, but leaves `EnableEmbeddedAsarIntegrityValidation` (`0x30`) and `OnlyLoadAppFromAsar` (`0x30`) disabled at Mach-O offset `0x0934fd38`. | [`#6914`](https://github.com/deltachat/deltachat-desktop/issues/6914) |
-| **Ferdium Desktop**<br>`v7.2.3` (`arm64`) | **`FUSE-001` / `FUSE-002` / `FUSE-003`**: `electron-builder.yml` enables `enableEmbeddedAsarIntegrityValidation` and `onlyLoadAppFromAsar`, but leaves `RunAsNode` (`0x31`), `EnableNodeOptionsEnvironmentVariable` (`0x31`), and `EnableNodeCliInspectArguments` (`0x31`) enabled in the packaged `Ferdium.app` binary. | [`#2607`](https://github.com/ferdium/ferdium-app/issues/2607) |
-
----
-
-## Provenance and generative AI policy
-
-Maintained by Mark ([`@malfunctionAI`](https://github.com/malfunctionAI)) at [KoodiKiht](https://koodikiht.dev) (Tallinn, Estonia).
-
-In accordance with **NLnet Foundation Generative AI Policy v2.0 (October 2026)** and EU copyright hygiene:
-- All binary parsers, offset calculations, test suites, and documentation in this repository are **human-authored**.
-- Generative AI / LLM code generation is strictly prohibited in project contributions (see [`CONTRIBUTING.md`](CONTRIBUTING.md)).
+| DeltaChat Desktop (`v2.65.0` arm64) | `FUSE-004` / `FUSE-005` (`ASAR-002`): `afterPackHook.mjs` disables `runAsNode` and `enableNodeCliInspectArguments`, but leaves `EnableEmbeddedAsarIntegrityValidation` (`0x30`) and `OnlyLoadAppFromAsar` (`0x30`) off at Mach-O offset `0x0934fd38`. | [`#6914`](https://github.com/deltachat/deltachat-desktop/issues/6914) |
+| Ferdium Desktop (`v7.2.3` arm64) | `FUSE-001..003`: `electron-builder.yml` enables ASAR integrity validation while leaving `RunAsNode` (`0x31`), `EnableNodeOptionsEnvironmentVariable` (`0x31`), and `EnableNodeCliInspectArguments` (`0x31`) enabled in `Ferdium.app`. | [`#2607`](https://github.com/ferdium/ferdium-app/issues/2607) |
 
 ## License
 
-MIT © 2026 Mark (`malfunctionAI`) / KoodiKiht. Compliant with [FSFE REUSE 3.2](https://reuse.software/).
+MIT © 2026 Mark ([@malfunctionAI](https://github.com/malfunctionAI)) / [KoodiKiht](https://koodikiht.dev). Compliant with [FSFE REUSE 3.2](https://reuse.software/).
