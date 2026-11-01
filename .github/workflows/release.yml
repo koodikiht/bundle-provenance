@@ -41,6 +41,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          git fetch origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}" --force
           git for-each-ref "refs/tags/${GITHUB_REF_NAME}" --format='%(contents)' > /tmp/notes.md
           for rid in $(gh api "repos/${GITHUB_REPOSITORY}/releases" --jq '.[] | select(.draft == true or .tag_name == "'"${GITHUB_REF_NAME}"'") | .id'); do
             gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${rid}"
