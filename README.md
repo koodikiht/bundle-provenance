@@ -11,7 +11,7 @@ Lockfile scanners see what was declared before compilation. Packaging hooks (`el
 
 ## Usage
 
-Requires `bun >= 1.1` (or `node >= 22.6` with `--experimental-strip-types`). Zero runtime npm dependencies.
+Requires `bun >= 1.1` (or `node >= 22.6` with `--experimental-strip-types`). No runtime npm dependencies.
 
 ```bash
 # Scan an Electron executable
