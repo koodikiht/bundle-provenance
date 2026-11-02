@@ -43,10 +43,10 @@ bun test
 
 ## Bugs found in the wild
 
-| Target | Finding | Issue |
+| Target | Finding | Issue / PR |
 | :--- | :--- | :--- |
-| DeltaChat Desktop (`v2.65.0` arm64) | `FUSE-004` / `FUSE-005` (`ASAR-002`): `afterPackHook.mjs` disables `runAsNode` and `enableNodeCliInspectArguments`, but leaves `EnableEmbeddedAsarIntegrityValidation` (`0x30`) and `OnlyLoadAppFromAsar` (`0x30`) off at Mach-O offset `0x0934fd38`. | [`#6914`](https://github.com/deltachat/deltachat-desktop/issues/6914) |
-| Ferdium Desktop (`v7.2.3` arm64) | `FUSE-001..003`: `electron-builder.yml` enables ASAR integrity validation while leaving `RunAsNode` (`0x31`), `EnableNodeOptionsEnvironmentVariable` (`0x31`), and `EnableNodeCliInspectArguments` (`0x31`) enabled in `Ferdium.app`. | [`#2607`](https://github.com/ferdium/ferdium-app/issues/2607) |
+| DeltaChat Desktop (`v2.65.0` arm64) | `FUSE-004` / `FUSE-005` (`ASAR-002`): `afterPackHook.mjs` disables `runAsNode` and `enableNodeCliInspectArguments`, but leaves `EnableEmbeddedAsarIntegrityValidation` (`0x30`) and `OnlyLoadAppFromAsar` (`0x30`) off at Mach-O offset `0x0934fd38`. | [`#6914`](https://github.com/deltachat/deltachat-desktop/issues/6914) / [`PR #6917`](https://github.com/deltachat/deltachat-desktop/pull/6917) |
+| Ferdium Desktop (`v7.2.3` arm64) | `FUSE-001..003`: `electron-builder.yml` enables ASAR integrity validation while leaving `RunAsNode` (`0x31`), `EnableNodeOptionsEnvironmentVariable` (`0x31`), and `EnableNodeCliInspectArguments` (`0x31`) enabled in `Ferdium.app`. | [`#2607`](https://github.com/ferdium/ferdium-app/issues/2607) / [`PR #2608`](https://github.com/ferdium/ferdium-app/pull/2608) |
 
 ## License
 
