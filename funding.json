@@ -17,12 +17,12 @@
       "name": "bundle-provenance",
       "description": "Post-build binary and client bundle supply-chain auditor (Electron Fuses, ASAR Pickle, SourceMap v3, PurlDB and CycloneDX v1.6).",
       "webpageUrl": {
-        "url": "https://github.com/koodikiht/bundle-provenance",
-        "wellKnown": "https://github.com/koodikiht/bundle-provenance/blob/main/.well-known/funding-manifest-urls"
+        "url": "https://koodikiht.dev",
+        "wellKnown": "https://koodikiht.dev/.well-known/funding-manifest-urls"
       },
       "repositoryUrl": {
         "url": "https://github.com/koodikiht/bundle-provenance",
-        "wellKnown": "https://github.com/koodikiht/bundle-provenance/blob/main/.well-known/funding-manifest-urls"
+        "wellKnown": "https://github.com/koodikiht/bundle-provenance/raw/main/.well-known/funding-manifest-urls"
       },
       "licenses": ["spdx:MIT"],
       "tags": ["security", "sbom", "supply-chain", "cyclonedx", "purl", "electron", "developer-tools", "cli", "auditing"]
@@ -32,12 +32,12 @@
       "name": "axtree-audit",
       "description": "Out-of-band CDP Accessibility Tree (AXTree) WCAG 2.2 verifier and third-party telemetry inspector (SARIF v2.1.0 and W3C EARL).",
       "webpageUrl": {
-        "url": "https://github.com/koodikiht/axtree-audit",
-        "wellKnown": "https://github.com/koodikiht/axtree-audit/blob/main/.well-known/funding-manifest-urls"
+        "url": "https://koodikiht.dev",
+        "wellKnown": "https://koodikiht.dev/.well-known/funding-manifest-urls"
       },
       "repositoryUrl": {
         "url": "https://github.com/koodikiht/axtree-audit",
-        "wellKnown": "https://github.com/koodikiht/axtree-audit/blob/main/.well-known/funding-manifest-urls"
+        "wellKnown": "https://github.com/koodikiht/axtree-audit/raw/main/.well-known/funding-manifest-urls"
       },
       "licenses": ["spdx:MIT"],
       "tags": ["accessibility", "wcag", "w3c-earl", "privacy", "cdp", "webdriver-bidi", "developer-tools", "cli", "browser", "testing"]
