@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Mark (malfunctionAI) / KoodiKiht
 // SPDX-License-Identifier: MIT
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { closeSync, existsSync, openSync, readdirSync, readFileSync, readSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { inspectAsarBuffer } from "./asar.ts";
 import { inspectElectronFuses } from "./fuses.ts";
@@ -10,6 +10,37 @@ import { inspectMachoEntitlements } from "./macho.ts";
 import { formatCycloneDx, formatSarif, formatTextSummary } from "./reporters.ts";
 import { inspectBundleAndSourceMap } from "./sourcemap.ts";
 import type { AuditReport, DiscoveredPackage, Finding } from "./types.ts";
+
+const SKIPPED_HELPERS = new Set([
+  "chrome-sandbox",
+  "chrome_crashpad_handler",
+  "crashpad_handler",
+  "squirrel.exe",
+]);
+
+function hasNativeExecutableMagic(filePath: string): boolean {
+  let fd = -1;
+  try {
+    fd = openSync(filePath, "r");
+    const hdr = new Uint8Array(4);
+    if (readSync(fd, hdr, 0, 4, 0) < 4) return false;
+    // ELF (0x7f 'E' 'L' 'F'), PE ('M' 'Z'), or Mach-O / Universal fat headers
+    if (hdr[0] === 0x7f && hdr[1] === 0x45 && hdr[2] === 0x4c && hdr[3] === 0x46) return true;
+    if (hdr[0] === 0x4d && hdr[1] === 0x5a) return true;
+    const be = ((hdr[0] << 24) >>> 0) | (hdr[1] << 16) | (hdr[2] << 8) | hdr[3];
+    return (
+      be === 0xfeedface ||
+      be === 0xfeedfacf ||
+      be === 0xcefaedfe ||
+      be === 0xcffaedfe ||
+      be === 0xcafebabe
+    );
+  } catch {
+    return false;
+  } finally {
+    if (fd >= 0) closeSync(fd);
+  }
+}
 
 export function scanAppBundleDirectory(appDir: string): AuditReport {
   const packages: DiscoveredPackage[] = [];
@@ -28,6 +59,24 @@ export function scanAppBundleDirectory(appDir: string): AuditReport {
     join(appDir, "Contents/Frameworks/Electron Framework.framework/Versions/Current/Electron Framework"),
     join(appDir, "Contents/Frameworks/Electron Framework.framework/Electron Framework"),
   ];
+
+  if (existsSync(appDir)) {
+    for (const entry of readdirSync(appDir)) {
+      const lower = entry.toLowerCase();
+      if (
+        SKIPPED_HELPERS.has(lower) ||
+        lower.startsWith("lib") ||
+        /\.(asar|pak|dat|bin|json|txt|md|html|icns|ico|png|dll|so|dylib)$/i.test(lower) ||
+        /\.so\.\d+$/i.test(lower)
+      ) {
+        continue;
+      }
+      const full = join(appDir, entry);
+      if (existsSync(full) && statSync(full).isFile() && hasNativeExecutableMagic(full)) {
+        fuseCandidates.push(full);
+      }
+    }
+  }
 
   for (const cand of fuseCandidates) {
     if (existsSync(cand) && statSync(cand).isFile()) {
@@ -59,12 +108,14 @@ export function scanAppBundleDirectory(appDir: string): AuditReport {
     }
   }
 
-  const resDir = join(appDir, "Contents/Resources");
-  const asarCandidates = [
-    join(resDir, "app.asar"),
-    join(resDir, "app/node_modules.asar"),
-  ];
-  if (existsSync(resDir)) {
+  const resDirs = [join(appDir, "Contents/Resources"), join(appDir, "resources")];
+  const asarCandidates: string[] = [];
+  for (const resDir of resDirs) {
+    if (!existsSync(resDir) || !statSync(resDir).isDirectory()) continue;
+    for (const rel of ["app.asar", "app/node_modules.asar"]) {
+      const p = join(resDir, rel);
+      if (!asarCandidates.includes(p)) asarCandidates.push(p);
+    }
     for (const entry of readdirSync(resDir)) {
       if (entry.endsWith(".asar")) {
         const full = join(resDir, entry);

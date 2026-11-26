@@ -1,9 +1,12 @@
 // SPDX-FileCopyrightText: 2026 Mark (malfunctionAI) / KoodiKiht
 // SPDX-License-Identifier: MIT
 
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 import { inspectAsarBuffer } from "../src/asar.ts";
-import { scanArtifactBuffer } from "../src/cli.ts";
+import { scanAppBundleDirectory, scanArtifactBuffer } from "../src/cli.ts";
 import { FUSE_SENTINEL, inspectElectronFuses } from "../src/fuses.ts";
 import { inspectMachoEntitlements } from "../src/macho.ts";
 import { formatCycloneDx, formatSarif } from "../src/reporters.ts";
@@ -234,5 +237,24 @@ describe("bundle-provenance v0.1.0 core verification", () => {
     expect(res.found).toBe(true);
     expect(res.version).toBe(1);
     expect(res.findings.map((f) => f.ruleId)).toEqual(["FUSE-001", "FUSE-007"]);
+  });
+
+  test("scans unpacked Linux Electron directories with ELF binary and resources/app.asar", () => {
+    const dir = mkdtempSync(join(tmpdir(), "bp-linux-"));
+    try {
+      mkdirSync(join(dir, "resources"), { recursive: true });
+      const elf = buildSyntheticBinaryWithFuses("10110000");
+      elf.set([0x7f, 0x45, 0x4c, 0x46], 0);
+      writeFileSync(join(dir, "desktop-client"), elf);
+      writeFileSync(join(dir, "resources/app.asar"), buildSyntheticAsarArchive());
+
+      const rep = scanAppBundleDirectory(dir);
+      expect(rep.fuses?.found).toBe(true);
+      expect(rep.packages.length).toBe(2);
+      expect(rep.findings.map((f) => f.ruleId)).toContain("FUSE-001");
+      expect(rep.findings.map((f) => f.ruleId)).toContain("ASAR-002");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
