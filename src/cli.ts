@@ -2,8 +2,18 @@
 // SPDX-FileCopyrightText: 2026 Mark (malfunctionAI) / KoodiKiht
 // SPDX-License-Identifier: MIT
 
-import { closeSync, existsSync, openSync, readdirSync, readFileSync, readSync, statSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  readSync,
+  realpathSync,
+  statSync,
+} from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { inspectAsarBuffer } from "./asar.ts";
 import { inspectElectronFuses } from "./fuses.ts";
 import { inspectMachoEntitlements } from "./macho.ts";
@@ -202,7 +212,11 @@ Usage:
 `);
 }
 
-if (import.meta.main) {
+const isMain =
+  import.meta.main ??
+  Boolean(process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href);
+
+if (isMain) {
   const args = process.argv.slice(2);
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     printUsage();
@@ -255,7 +269,7 @@ if (import.meta.main) {
     });
   } else {
     console.error(`Error: ${target} is neither a regular file nor an .app directory`);
-    process.exit(1);
+    throw process.exit(1);
   }
 
   if (format === "cyclonedx") {

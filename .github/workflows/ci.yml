@@ -22,6 +22,8 @@ jobs:
           bun-version: latest
       - name: Run test suite
         run: bun test
+      - name: Compile standalone binary
+        run: bun build --compile src/cli.ts --outfile /tmp/bundle-provenance
       - name: Verify empty runtime dependency list
         run: |
           deps=$(jq -r '.dependencies // empty' package.json)

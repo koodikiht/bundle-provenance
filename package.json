@@ -16,7 +16,8 @@
   "scripts": {
     "start": "bun run src/cli.ts",
     "test": "bun test",
-    "build:bin": "bun build --compile src/cli.ts --outfile dist/bundle-provenance"
+    "check": "oxlint src && tsgo --noEmit && bun test",
+    "build:bin": "bun run check && bun build --compile src/cli.ts --outfile dist/bundle-provenance"
   },
   "engines": {
     "node": ">=22.0.0",
