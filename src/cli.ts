@@ -204,7 +204,7 @@ export function scanArtifactBuffer(
 }
 
 function printUsage(): void {
-  console.log(`bundle-provenance v0.1.0 - Post-build client artifact and SBOM auditor
+  console.log(`bundle-provenance v0.1.1 - Post-build client artifact and SBOM auditor
 
 Usage:
   bundle-provenance scan <file> [--format text|json|cyclonedx|sarif] [--map <file.map>] [--manifest <package.json>] [--fail-on-high]

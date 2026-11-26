@@ -5,7 +5,7 @@
 
 Pursuant to **Regulation (EU) 2024/2847 (Cyber Resilience Act), Annex V and Module A (Internal Production Control)**:
 
-1. **Product identification**: `bundle-provenance` (`pkg:github/koodikiht/bundle-provenance@0.1.0`)
+1. **Product identification**: `bundle-provenance` (`pkg:github/koodikiht/bundle-provenance@0.1.1`)
 2. **Manufacturer / maintainer**: Mark (`malfunctionAI`) / KoodiKiht (Tallinn, Estonia - `contact@koodikiht.dev`)
 3. **Supply-chain hygiene**:
    - Runtime dependency count: `0` (eliminates transitive third-party supply-chain exposure).

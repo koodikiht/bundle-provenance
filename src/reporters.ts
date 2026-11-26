@@ -43,7 +43,7 @@ export function formatCycloneDx(report: AuditReport): string {
           {
             type: "application",
             name: "bundle-provenance",
-            version: "0.1.0",
+            version: "0.1.1",
             supplier: { name: "KoodiKiht" },
           },
         ],
@@ -74,7 +74,7 @@ export function formatSarif(report: AuditReport): string {
         tool: {
           driver: {
             name: "bundle-provenance",
-            version: "0.1.0",
+            version: "0.1.1",
             informationUri: "https://github.com/koodikiht/bundle-provenance",
           },
         },
@@ -100,7 +100,7 @@ export function formatSarif(report: AuditReport): string {
 
 export function formatTextSummary(report: AuditReport): string {
   const lines: string[] = [];
-  lines.push(`=== bundle-provenance v0.1.0 | target: ${report.target} ===`);
+  lines.push(`=== bundle-provenance v0.1.1 | target: ${report.target} ===`);
 
   if (report.fuses?.found) {
     lines.push(
