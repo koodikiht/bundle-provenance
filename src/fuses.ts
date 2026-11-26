@@ -30,68 +30,46 @@ function decodeFuseByte(b: number): FuseState {
   return "unknown";
 }
 
-function findSentinelOffset(buf: Uint8Array): number {
+function isFuseStateByte(b: number): boolean {
+  return b === 0x30 || b === 0x31 || b === 0x72;
+}
+
+interface WireMatch {
+  offset: number;
+  version: number;
+  wireLength: number;
+  valid: boolean;
+}
+
+function findFuseWireMatches(buf: Uint8Array): WireMatch[] {
+  const matches: WireMatch[] = [];
   const limit = buf.length - FUSE_SENTINEL.length - 2;
   outer: for (let i = 0; i <= limit; i++) {
     if (buf[i] !== 0x64 || buf[i + 1] !== 0x4c) continue;
     for (let j = 2; j < FUSE_SENTINEL.length; j++) {
       if (buf[i + j] !== FUSE_SENTINEL[j]) continue outer;
     }
-    return i;
+    const wireStart = i + FUSE_SENTINEL.length;
+    const version = buf[wireStart];
+    const wireLength = buf[wireStart + 1];
+    const payloadStart = wireStart + 2;
+    if (version !== 1) continue;
+
+    let valid = wireLength > 0 && wireLength <= 32 && payloadStart + wireLength <= buf.length;
+    if (valid) {
+      for (let k = 0; k < wireLength; k++) {
+        if (!isFuseStateByte(buf[payloadStart + k])) {
+          valid = false;
+          break;
+        }
+      }
+    }
+    matches.push({ offset: i, version, wireLength, valid });
   }
-  return -1;
+  return matches;
 }
 
-export function inspectElectronFuses(buf: Uint8Array, location = "binary"): FuseAuditResult {
-  const offset = findSentinelOffset(buf);
-  if (offset < 0) {
-    return {
-      found: false,
-      sentinelOffsetHex: null,
-      version: null,
-      wireLength: null,
-      fuses: [],
-      findings: [],
-    };
-  }
-
-  const offsetHex = `0x${offset.toString(16).padStart(8, "0")}`;
-  const wireStart = offset + FUSE_SENTINEL.length;
-  const version = buf[wireStart];
-  const wireLength = buf[wireStart + 1];
-  const payloadStart = wireStart + 2;
-
-  if (payloadStart + wireLength > buf.length || wireLength === 0 || wireLength > 64) {
-    return {
-      found: true,
-      sentinelOffsetHex: offsetHex,
-      version,
-      wireLength,
-      fuses: [],
-      findings: [
-        {
-          ruleId: "FUSE-000",
-          severity: "MEDIUM",
-          message: `Truncated or malformed Electron fuse wire block (version=${version}, len=${wireLength})`,
-          location,
-          offsetHex,
-        },
-      ],
-    };
-  }
-
-  const fuses: FuseStatus[] = [];
-  for (let idx = 0; idx < wireLength; idx++) {
-    const rawByte = buf[payloadStart + idx];
-    const name = FUSE_V1_SCHEMA[idx] ?? `Fuse_${idx}`;
-    fuses.push({
-      name,
-      byteIndex: idx,
-      rawByte,
-      state: decodeFuseByte(rawByte),
-    });
-  }
-
+function evaluateFuseSlice(fuses: FuseStatus[], location: string, offsetHex: string): Finding[] {
   const findings: Finding[] = [];
   const byName = new Map(fuses.map((f) => [f.name, f]));
 
@@ -155,12 +133,96 @@ export function inspectElectronFuses(buf: Uint8Array, location = "binary"): Fuse
     });
   }
 
+  return findings;
+}
+
+export function inspectElectronFuses(buf: Uint8Array, location = "binary"): FuseAuditResult {
+  const matches = findFuseWireMatches(buf);
+  if (matches.length === 0) {
+    return {
+      found: false,
+      sentinelOffsetHex: null,
+      version: null,
+      wireLength: null,
+      fuses: [],
+      findings: [],
+    };
+  }
+
+  const validMatches = matches.filter((m) => m.valid);
+  if (validMatches.length === 0) {
+    const first = matches[0];
+    const offsetHex = `0x${first.offset.toString(16).padStart(8, "0")}`;
+    return {
+      found: true,
+      sentinelOffsetHex: offsetHex,
+      version: first.version,
+      wireLength: first.wireLength,
+      fuses: [],
+      findings: [
+        {
+          ruleId: "FUSE-000",
+          severity: "MEDIUM",
+          message: `Truncated or malformed Electron fuse wire block (version=${first.version}, len=${first.wireLength})`,
+          location,
+          offsetHex,
+        },
+      ],
+    };
+  }
+
+  let primaryFuses: FuseStatus[] = [];
+  let primaryOffsetHex = "";
+  const seenRuleIds = new Set<string>();
+  const findings: Finding[] = [];
+  const sliceSignatures = new Set<string>();
+
+  for (let s = 0; s < validMatches.length; s++) {
+    const m = validMatches[s];
+    const offsetHex = `0x${m.offset.toString(16).padStart(8, "0")}`;
+    const payloadStart = m.offset + FUSE_SENTINEL.length + 2;
+    const fuses: FuseStatus[] = [];
+    let sig = "";
+
+    for (let idx = 0; idx < m.wireLength; idx++) {
+      const rawByte = buf[payloadStart + idx];
+      const name = FUSE_V1_SCHEMA[idx] ?? `Fuse_${idx}`;
+      const state = decodeFuseByte(rawByte);
+      fuses.push({ name, byteIndex: idx, rawByte, state });
+      sig += String.fromCharCode(rawByte);
+    }
+
+    sliceSignatures.add(sig);
+    if (s === 0) {
+      primaryFuses = fuses;
+      primaryOffsetHex = offsetHex;
+    }
+
+    for (const f of evaluateFuseSlice(fuses, location, offsetHex)) {
+      if (!seenRuleIds.has(f.ruleId)) {
+        seenRuleIds.add(f.ruleId);
+        findings.push(f);
+      }
+    }
+  }
+
+  if (sliceSignatures.size > 1) {
+    const secondHex = `0x${validMatches[1].offset.toString(16).padStart(8, "0")}`;
+    findings.push({
+      ruleId: "FUSE-007",
+      severity: "HIGH",
+      message: `Universal binary fuse vectors diverge across architecture slices (${primaryOffsetHex} vs ${secondHex})`,
+      location,
+      offsetHex: secondHex,
+    });
+  }
+
   return {
     found: true,
-    sentinelOffsetHex: offsetHex,
-    version,
-    wireLength,
-    fuses,
+    sentinelOffsetHex: primaryOffsetHex,
+    version: validMatches[0].version,
+    wireLength: validMatches[0].wireLength,
+    fuses: primaryFuses,
     findings,
   };
 }

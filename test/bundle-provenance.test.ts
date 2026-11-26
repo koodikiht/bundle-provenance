@@ -217,4 +217,22 @@ describe("bundle-provenance v0.1.0 core verification", () => {
     expect(res.findings.map((f) => f.ruleId)).toContain("MACHO-001");
     expect(res.findings[0]?.message).toContain("bypasses hardened Electron Fuses");
   });
+
+  test("skips string-literal sentinel matches and checks all Universal binary slices", () => {
+    const asciiPrefix = new TextEncoder().encode(
+      'const SENTINEL = "dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX";',
+    );
+    const sliceX64 = buildSyntheticBinaryWithFuses("01001110");
+    const sliceArm64 = buildSyntheticBinaryWithFuses("11001110");
+
+    const combined = new Uint8Array(asciiPrefix.length + sliceX64.length + sliceArm64.length);
+    combined.set(asciiPrefix, 0);
+    combined.set(sliceX64, asciiPrefix.length);
+    combined.set(sliceArm64, asciiPrefix.length + sliceX64.length);
+
+    const res = inspectElectronFuses(combined, "UniversalElectron");
+    expect(res.found).toBe(true);
+    expect(res.version).toBe(1);
+    expect(res.findings.map((f) => f.ruleId)).toEqual(["FUSE-001", "FUSE-007"]);
+  });
 });
